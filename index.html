@@ -4111,6 +4111,12 @@ html[lang=en] .verbs li{grid-template-columns:auto}
             <li><span>06</span>운영·확장</li>
           </ol>
         </div>
+        <!-- ⚠ 경고 · 상담 리드 수집 폼 — 수정하기 전에 반드시 개발자에게 먼저 물어보세요.
+             이 폼은 상담 리드(회사명 · 이름 · 이메일 · 상담 내용)를 받아 Google Apps Script(axepack_contact_appsscript.gs)로 보내고,
+             Apps Script가 구글 시트에 기록한 뒤 담당자에게 알림 메일을 발송합니다. 문구나 디자인만 고칠 때도 아래는 건드리지 마세요.
+             · input · select · textarea의 name 속성, 검토 내용 라디오의 value(env · cap · poc · phy), 동의 체크박스(agree), 스팸 방지 칸(hp_check)
+             · 숨은 필드(context, 그리고 아래 lead-capture 스크립트가 만드는 ready · case · journey · page · utm · referrer)
+             이름이나 값이 .gs와 어긋나면 접수가 거절되거나, 시트와 메일에 값이 비거나, 스팸 방지 칸이 채워져 아무 안내 없이 버려질 수 있습니다. -->
         <form class="form rv" id="ctForm" novalidate>
           <input type="hidden" name="context" value="">
           <fieldset>
@@ -5641,6 +5647,10 @@ html[lang=en] .verbs li{grid-template-columns:auto}
 
   /* ══ lead-capture: 리드 확보 — 단계형 문의 · 함께 전달되는 맥락(준비도 · 사례 · 둘러본 내용 · 유입) · 떠 있는 상담 바 · 자료 받기 ══
      전송: ctForm의 입력값과 숨은 필드(context · ready · case · journey · page · utm · referrer)를 Apps Script 웹앱(axepack_contact_appsscript.gs)에 POST한다. */
+  /* ⚠ 경고 · 리드 전송 주소 — 수정하기 전에 반드시 개발자에게 먼저 물어보세요.
+     LEAD_URL은 상담 리드를 받아 구글 시트에 기록하고 알림 메일을 발송하는 Google Apps Script 웹앱 주소입니다.
+     이 값이나 아래 전송 코드(fetch · 응답의 ok 확인)를 바꾸면 상담 요청이 접수되지 않거나 알림 메일이 발송되지 않습니다.
+     .gs를 고친 뒤에는 Apps Script에서 새 버전으로 다시 배포해야 같은 주소에 반영되므로, 코드와 배포 상태를 함께 확인해야 합니다. */
   const LEAD_URL = 'https://script.google.com/macros/s/AKfycbz7FHt8Bwfr0CjC7Kko_wLVnzT4GLonzzYeQ-LEtLOO18QtdA6So9KGoGnDSPQ6fsVX/exec';
   const LEAD = { seen: [], noReady: false, caseCode: '', H: null, chips: null };
   const esc2 = v => String(v).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
@@ -5695,6 +5705,7 @@ html[lang=en] .verbs li{grid-template-columns:auto}
       leadSync(); sending = true;
       const btn = $('button[type=submit]', ctForm), kids = [...btn.childNodes], ac = new AbortController(), tm = setTimeout(() => ac.abort(), 20000);
       btn.disabled = true; btn.replaceChildren(Object.assign(document.createElement('span'), { className: 't', textContent: '보내는 중…' }));
+      // ⚠ 경고 · 리드 전송부(Google Apps Script 호출) — 수정하기 전에 반드시 개발자에게 먼저 물어보세요. 응답 JSON의 ok가 true일 때만 접수된 것으로 처리합니다.
       let sent = false;
       try { const res = await fetch(LEAD_URL, { method: 'POST', body: JSON.stringify({ ...Object.fromEntries(new FormData(ctForm)), lang: window.AX_LANG || 'ko' }), signal: ac.signal }); sent = (await res.json()).ok === true; } catch (e) { sent = false; }
       clearTimeout(tm); sending = false; btn.disabled = false; btn.replaceChildren(...kids);
